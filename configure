@@ -24,6 +24,69 @@ if [ ! -z ${alt_compiler} ]; then
   echo "======"
 fi
 
+# derive CUDA_HOME from nvcc if CUDA_HOME is not set:
+
+# find nvcc and derive CUDA_HOME
+if [ -z "$CUDA_HOME" ]; then
+    NVCC=$(which nvcc 2>/dev/null)
+    if [ -z "$NVCC" ]; then
+        echo "ERROR: nvcc not found on PATH and CUDA_HOME is not set"
+        exit 1
+    fi
+    CUDA_HOME=$(dirname $(dirname $NVCC))
+else
+    echo "using pre-set CUDA_HOME: ${CUDA_HOME}"
+fi
+
+# probe for include path
+if [ -z "$CUDA_INCLUDE" ]; then
+    if [ -d "${CUDA_HOME}/targets/x86_64-linux/include" ]; then
+        CUDA_INCLUDE="${CUDA_HOME}/targets/x86_64-linux/include"
+        echo "CUDA_INCLUDE discovered as ${CUDA_INCLUDE}"
+    elif [ -d "${CUDA_HOME}/include" ]; then
+        CUDA_INCLUDE="${CUDA_HOME}/include"
+        echo "CUDA_INCLUDE discovered as ${CUDA_INCLUDE}"
+    else
+        echo "ERROR: could not find CUDA headers under ${CUDA_HOME}"
+        exit 1
+    fi
+else
+    echo "using pre-set CUDA_INCLUDE: ${CUDA_INCLUDE}"
+fi
+
+# probe for lib path
+if [ -z "$CUDA_LIB" ]; then
+    if [ -d "${CUDA_HOME}/targets/x86_64-linux/lib" ]; then
+        CUDA_LIB="${CUDA_HOME}/targets/x86_64-linux/lib"
+        echo "CUDA_LIB discovered as ${CUDA_LIB}"
+    elif [ -d "${CUDA_HOME}/lib64" ]; then
+        CUDA_LIB="${CUDA_HOME}/lib64"
+        echo "CUDA_LIB discovered as ${CUDA_LIB}"
+    else
+        echo "ERROR: could not find CUDA libs under ${CUDA_HOME}"
+        exit 1
+    fi
+else
+    echo "using pre-set CUDA_LIB: ${CUDA_LIB}"
+fi
+
+
+# probe for stubs
+if [ -z "$CUDA_STUBS" ]; then
+    if [ -d "${CUDA_LIB}/stubs" ]; then
+        CUDA_STUBS="${CUDA_LIB}/stubs"
+        echo "CUDA_STUBS discovered as ${CUDA_STUBS}"
+    elif [ -d "${CUDA_HOME}/lib64/stubs" ]; then
+        CUDA_STUBS="${CUDA_HOME}/lib64/stubs"
+        echo "CUDA_STUBS discovered as ${CUDA_STUBS}"
+    else
+        echo "ERROR: could not find CUDA stubs under ${CUDA_HOME}"
+        exit 1
+    fi
+else
+    echo "using pre-set CUDA_STUBS: ${CUDA_STUBS}"
+fi
+
 # technically uname writes its output to the standard output without -s
 # but being explicit doesn't hurt
 op_sys=$(uname -s)
@@ -193,3 +256,8 @@ else
   exit 1
 fi
 
+# write discovered paths into Makevars
+sed -e "s|@CUDA_INCLUDE@|${CUDA_INCLUDE}|" \
+    -e "s|@CUDA_LIB@|${CUDA_LIB}|" \
+    -e "s|@CUDA_STUBS@|${CUDA_STUBS}|" \
+    src/Makevars.in > src/Makevars

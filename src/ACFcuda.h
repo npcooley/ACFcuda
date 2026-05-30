@@ -22,8 +22,16 @@
 #include <stddef.h>
 
 /* ============================================================================
- * types, constants, and their helpers
+ * types, constants, structs, and their helpers
  * ========================================================================= */
+
+// cuda kernel type!
+#define CUDA_KERNEL_NAME_MAX 256
+typedef struct {
+  CUmodule   module;
+  CUfunction function;
+  char       kernel_name[CUDA_KERNEL_NAME_MAX];
+} CudaKernel;
 
 // typedefs to standardize handoffs between R data types and CUDA data types 
 typedef enum {
@@ -135,6 +143,15 @@ attribute_visible SEXP c_cuda_device_count(void);
 attribute_visible SEXP c_cuda_device_information(SEXP device_index_sexp);
 
 /* ============================================================================
+ * libraries_functions.c
+ * ========================================================================= */
+void cuda_kernel_finalizer(SEXP ptr);
+attribute_visible SEXP c_cuda_kernel_from_ptx(SEXP cuda_context_sexp,
+                                              SEXP ptx_path_sexp,
+                                              SEXP kernel_name_sexp);
+
+
+/* ============================================================================
  * runners.c
  * kernel registry and .External dispatch entry point
  * ========================================================================= */
@@ -161,7 +178,7 @@ const char *cuda_type_name(CudaType type);
 
 char *read_file_to_buffer(const char *path,
                           char *err_buf,
-                          size_t err_buf_size)
+                          size_t err_buf_size);
 
 /* end header guard */
 #endif

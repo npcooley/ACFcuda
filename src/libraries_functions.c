@@ -7,6 +7,7 @@
  * ========================================================================= */
 
 #include <Rinternals.h>
+#include <cuda_runtime.h>
 #include <cuda.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -34,31 +35,6 @@ static void cuda_driver_error_string(CUresult res,
   } else {
     snprintf(buf, buf_size, "CUresult %d", (int)res);
   }
-}
-
-/* ============================================================================
- * SECTION: finalizers
- * ========================================================================= */
-
-// we need to be able to call R's garbage collector when a cudaDynamicKernel
-// is collected
-// we also need to unload the CUmodule and free the struct - this invalidates
-// CUfunction handles owned by the CUmodule
-// this means they don't need to be explicitly freed?
-void cuda_dynamic_kernel_finalizer(SEXP ptr) {
-  CudaDynamicKernel *dk = (CudaDynamicKernel *)R_ExternalPtrAddr(ptr);
-  if (dk == NULL) {
-    return;
-  }
-  if (dk->module != NULL) {
-    // i feel like i need a comment here, but it's late and i barely know what
-    // i'm doing
-    cuModuleUnload(dk->module);
-    dk->module   = NULL;
-    dk->function = NULL;
-  }
-  free(dk);
-  R_ClearExternalPtr(ptr);
 }
 
 /* ============================================================================

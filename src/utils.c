@@ -38,10 +38,10 @@
 // int is fine here for success failure
 CUresult cuda_driver_init(void) {
   CUresult res = cuInit(0);
-  if (res != CUDA_SUCCESS && res != CUDA_ERROR_ALREADY_INITIALIZED) {
-    return -1;
+  if (res != CUDA_SUCCESS) {
+    return res;
   }
-  return 0;
+  return CUDA_SUCCESS;
 }
 
 /* ============================================================================
@@ -64,6 +64,20 @@ void cuda_context_finalizer(SEXP ctx_exp) {
   }
   free(ctx);
   R_ClearExternalPtr(ctx_exp);
+}
+
+void cuda_kernel_finalizer(SEXP ptr) {
+  CudaKernel *dk = (CudaKernel *)R_ExternalPtrAddr(ptr);
+  if (dk == NULL) {
+    return;
+  }
+  if (dk->module != NULL) {
+    cuModuleUnload(dk->module);
+    dk->module   = NULL;
+    dk->function = NULL;
+  }
+  free(dk);
+  R_ClearExternalPtr(ptr);
 }
 
 /* --------------------------------------------------------------------------

@@ -1,26 +1,18 @@
-# Makevars for ACFcuda
+# Makevars.in for ACFcuda
 
-# prefer a user supplied CUDA home path, default to a reasonable expectation
-# otherwise
-CUDA_HOME ?= /usr/local/cuda
+# config file now sets CUDA_HOME, CUDA_INCLUDE, CUDA_LIB, and CUDA_STUBS
+# if they are not already set
+PKG_CPPFLAGS = -I. -I@CUDA_INCLUDE@
 
-# CUDA include and lib paths
-CUDA_INCLUDE = $(CUDA_HOME)/include
-CUDA_LIB = $(CUDA_HOME)/lib64
-
-# PKG_LIBS: link against CUDA runtime; -Wl,-rpath embeds the search path
-# so the package shared object can find libcudart at runtime without the
-# user setting LD_LIBRARY_PATH
-PKG_LIBS = -L$(CUDA_LIB) -lcudart -lcuda -Wl,-rpath,$(CUDA_LIB)
-
-# C preprocessor flags: include both the CUDA toolkit headers and the
-# package's own src/ directory (for ACFcuda.h)
-PKG_CPPFLAGS = -I. -I$(CUDA_INCLUDE)
+PKG_LIBS = -L@CUDA_LIB@ -lcudart \
+           -L@CUDA_STUBS@ -lcuda \
+           -Wl,-rpath,@CUDA_LIB@
 
 # C source files (compiled by R's default CC, typically gcc on non-macOS devices)
 SOURCES_C = buffers.c \
             command.c \
             devices.c \
+            libraries_functions.c \
             runners.c \
             utils.c \
             R_init_ACFcuda.c

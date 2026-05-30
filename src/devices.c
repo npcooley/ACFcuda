@@ -25,6 +25,7 @@
  * ========================================================================= */
 
 #include <cuda_runtime.h>
+#include <cuda.h>
 #include <Rinternals.h>
 #include <stdio.h>
 #include <string.h>
@@ -81,7 +82,7 @@ SEXP c_cuda_device_information(SEXP device_index_sexp) {
   }
   
   // get cuda's built in properties structure
-  cudaDeviceProp props;
+  struct cudaDeviceProp props;
   cudaError_t err = cudaGetDeviceProperties(&props, device_index);
   if (err != cudaSuccess) {
     Rf_error("cudaGetDeviceProperties failed for device %d", device_index);
